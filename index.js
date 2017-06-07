@@ -4,7 +4,7 @@ const check = (context) => {
   return context.task === 'publish';
 };
 
-const handle = (context) => new Promise((resolve, reject) => {
+const handleOld = (context) => new Promise((resolve, reject) => {
 
   const JSZip = require('jszip');
   const zip = new JSZip();
@@ -41,7 +41,7 @@ const handle = (context) => new Promise((resolve, reject) => {
         resolve();
       });
     })))
-    
+
     // Generate the zip file
     .then(() => zip.generateAsync({ type: 'nodebuffer' }))
 
@@ -64,7 +64,35 @@ const handle = (context) => new Promise((resolve, reject) => {
 
     resolve(promise);
   });
-  
+
+});
+
+const handle = context => new Promise((resolve, reject) => {
+  const fs = require('fs');
+  const config = context.config;
+
+  if (!config.name) {
+    throw new Error('"name" field is missing in pandora.json.')
+  }
+
+  if (!config.version) {
+    throw new Error('"version" field is missing in pandora.json.')
+  }
+
+  let docsJson = {
+    name: config.name,
+    version: config.version
+  };
+  let docsString = JSON.stringify(docsJson, null, 2);
+
+  fs.writeFile('./docs.json', docsString, err => {
+    if (err) {
+      throw err;
+    }
+    else {
+      resolve();
+    }
+  });
 });
 
 module.exports = { install, check, handle };

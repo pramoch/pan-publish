@@ -67,11 +67,24 @@ const handleOld = (context) => new Promise((resolve, reject) => {
 
 });
 
-const handle = context => new Promise((resolve, reject) => {
-  const fs = require('fs');
-  const config = context.config;
+const createTempFolder = () => new Promise((resolve, reject) => {
+  const fs = require('fs-extra');
+  const tempFolder = './.pandora-publish';
 
-  if (!config.name) {
+  if (fs.existsSync(tempFolder)) {
+    fs.removeSync(tempFolder);
+  }
+
+  fs.mkdirSync(tempFolder);
+
+  resolve(tempFolder);
+});
+
+const createDocsJson = (config, tempFolder) => new Promise((resolve, reject) => {
+  const fs = require('fs');
+  const path = require('path');
+
+   if (!config.name) {
     throw new Error('"name" field is missing in pandora.json.')
   }
 
@@ -84,8 +97,9 @@ const handle = context => new Promise((resolve, reject) => {
     version: config.version
   };
   let docsString = JSON.stringify(docsJson, null, 2);
+  let docsJsonPath = path.join(tempFolder, 'docs.json');
 
-  fs.writeFile('./docs.json', docsString, err => {
+  fs.writeFile(docsJsonPath, docsString, err => {
     if (err) {
       throw err;
     }
@@ -94,5 +108,12 @@ const handle = context => new Promise((resolve, reject) => {
     }
   });
 });
+
+const handle = (context) => {
+  return createTempFolder()
+  .then((tempFolder) => {
+    return createDocsJson(context.config, tempFolder);
+  });  
+};
 
 module.exports = { install, check, handle };

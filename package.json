@@ -22,6 +22,7 @@
   "author": "Thomson Reuters",
   "license": "ISC",
   "dependencies": {
+    "fs-extra": "^3.0.1",
     "glob": "^7.1.2",
     "jszip": "^3.1.3"
   }

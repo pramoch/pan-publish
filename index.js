@@ -67,7 +67,35 @@ const handleOld = (context) => new Promise((resolve, reject) => {
 
 });
 
-const createTempFolder = () => new Promise((resolve, reject) => {
+const validateConfigAndDestination = (config) => {
+  const fs = require('fs');
+
+  if (!config.name) {
+    throw new Error('"name" field is missing in pandora.json.');
+  }
+
+  if (!config.version) {
+    throw new Error('"version" field is missing in pandora.json.');
+  }
+
+  let books = config.books;
+  if (Array.isArray(books)) {
+    for (let i = 0; i < books.length; i++) {
+      let book = books[i];
+
+      if (!book.name) {
+        throw new Error('"name" field of book no.' + (i + 1) + ' is missing.')
+      }
+    }
+  }
+
+  let booksDestination = config.destination || './build';
+  if (!fs.existsSync(booksDestination)) {
+    throw new Error('Cannot find compiled books. Please make sure that you\'ve run "pandora book"');
+  }
+};
+
+const createTempFolder = () => {
   const fs = require('fs-extra');
   const tempFolder = './.pandora-publish';
 
@@ -77,10 +105,10 @@ const createTempFolder = () => new Promise((resolve, reject) => {
 
   fs.mkdirSync(tempFolder);
 
-  resolve(tempFolder);
-});
+  return tempFolder;
+};
 
-const generateConfig = (config) => {
+const parseConfig = (config) => {
   let docsJson = {
     name: config.name,
     version: config.version,
@@ -91,16 +119,11 @@ const generateConfig = (config) => {
   if (Array.isArray(books) && books.length > 0) {
     // Multi books
     for (let i = 0; i < books.length; i++) {
-      var book = books[i];
-      if (!book.name) {
-        throw new Error('"name" field of book no.' + (i+1) + ' is missing.')
-      }
-      else {
-        docsJson.books.push({
-          name: book.name,
-          type: book.type || config.type || 'markdown'
-        });
-      }
+      let book = books[i];
+      docsJson.books.push({
+        name: book.name,
+        type: book.type || config.type || 'markdown'
+      });
     }
   }
   else {
@@ -118,15 +141,7 @@ const createDocsJson = (config, tempFolder) => new Promise((resolve, reject) => 
   const fs = require('fs');
   const path = require('path');
 
-   if (!config.name) {
-    throw new Error('"name" field is missing in pandora.json.')
-  }
-
-  if (!config.version) {
-    throw new Error('"version" field is missing in pandora.json.')
-  }
-
-  let docsJson = generateConfig(config);
+  let docsJson = parseConfig(config);
   let docsString = JSON.stringify(docsJson, null, 2);
   let docsJsonPath = path.join(tempFolder, 'docs.json');
 
@@ -141,10 +156,12 @@ const createDocsJson = (config, tempFolder) => new Promise((resolve, reject) => 
 });
 
 const handle = (context) => {
-  return createTempFolder()
-  .then((tempFolder) => {
-    return createDocsJson(context.config, tempFolder);
-  });
+  var config = context.config;
+
+  validateConfigAndDestination(config);
+  let tempFolder = createTempFolder();
+
+  return createDocsJson(config, tempFolder);
 };
 
 module.exports = { install, check, handle };

@@ -82,17 +82,13 @@ const validateConfigAndDestination = (config) => {
   if (Array.isArray(books)) {
     for (let i = 0; i < books.length; i++) {
       let book = books[i];
-
-      if (!book.name) {
-        throw new Error('"name" field of book no.' + (i + 1) + ' is missing.')
-      }
     }
   }
 
-  let booksDestination = config.destination || './build';
-  if (!fs.existsSync(booksDestination)) {
-    throw new Error('Cannot find compiled books. Please make sure that you\'ve run "pandora book"');
-  }
+  // let booksDestination = config.destination || './build';
+  // if (!fs.existsSync(booksDestination)) {
+  //   throw new Error('Cannot find compiled books. Please make sure that you\'ve run "pandora book"');
+  // }
 };
 
 const createTempFolder = () => {
@@ -117,21 +113,13 @@ const parseConfig = (config) => {
 
   let books = config.books;
   if (Array.isArray(books) && books.length > 0) {
-    // Multi books
     for (let i = 0; i < books.length; i++) {
       let book = books[i];
       docsJson.books.push({
         name: book.name,
-        type: book.type || config.type || 'markdown'
+        type: book.type
       });
     }
-  }
-  else {
-    // Single book
-    docsJson.books.push({
-      name: config.name,
-      type: config.type || 'markdown'
-    });
   }
 
   return docsJson;

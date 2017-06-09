@@ -95,14 +95,14 @@ const validateConfigAndDestination = (config) => {
 };
 
 const createTempFolder = () => {
-  const fs = require('fs-extra');
+  const fse = require('fs-extra');
   const tempFolder = './.pandora-publish';
 
-  if (fs.existsSync(tempFolder)) {
-    fs.removeSync(tempFolder);
+  if (fse.existsSync(tempFolder)) {
+    fse.removeSync(tempFolder);
   }
 
-  fs.mkdirSync(tempFolder);
+  fse.mkdirSync(tempFolder);
 
   return tempFolder;
 };
@@ -115,20 +115,18 @@ const parseConfig = (config) => {
   };
 
   let books = config.books;
-  if (Array.isArray(books) && books.length > 0) {
-    for (let i = 0; i < books.length; i++) {
-      let book = books[i];
-      docsJson.books.push({
-        name: book.name,
-        type: book.type
-      });
-    }
+  for (let i = 0; i < books.length; i++) {
+    let book = books[i];
+    docsJson.books.push({
+      name: book.name,
+      type: book.type
+    });
   }
 
   return docsJson;
 };
 
-const createDocsJson = (config, tempFolder) => new Promise((resolve, reject) => {
+const createDocsJson = (config, tempFolder) => {
   const fs = require('fs');
   const path = require('path');
 
@@ -136,23 +134,37 @@ const createDocsJson = (config, tempFolder) => new Promise((resolve, reject) => 
   let docsString = JSON.stringify(docsJson, null, 2);
   let docsJsonPath = path.join(tempFolder, 'docs.json');
 
-  fs.writeFile(docsJsonPath, docsString, err => {
-    if (err) {
-      throw err;
-    }
-    else {
-      resolve();
-    }
-  });
-});
+  fs.writeFileSync(docsJsonPath, docsString);
+};
 
-const handle = (context) => {
+const copyBooks = (config, tempFolder) => {
+  const path = require('path');
+  const fse = require('fs-extra');
+
+  // create books folder
+  var booksFolder = path.join(tempFolder, 'books');
+  fse.mkdirSync(booksFolder);
+
+  // copy books
+  var books = config.books;
+  for(let i = 0; i < books.length; i++) {
+    let book = books[i];
+    let dest = path.join(book.outdir, book.name);
+
+    fse.copySync(dest, path.join(booksFolder, book.name));
+  }
+};
+
+const handle = (context) => new Promise((resolve, reject) => {
   var config = context.config;
 
   validateConfigAndDestination(config);
   let tempFolder = createTempFolder();
 
-  return createDocsJson(config, tempFolder);
-};
+  createDocsJson(config, tempFolder)
+  copyBooks(config, tempFolder);
+
+  resolve();
+});
 
 module.exports = { install, check, handle };

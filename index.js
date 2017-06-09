@@ -69,7 +69,9 @@ const handleOld = (context) => new Promise((resolve, reject) => {
 
 const validateConfigAndDestination = (config) => {
   const fs = require('fs');
+  const path = require('path');
 
+  // name and version are mandatory fields
   if (!config.name) {
     throw new Error('"name" field is missing in pandora.json.');
   }
@@ -78,17 +80,18 @@ const validateConfigAndDestination = (config) => {
     throw new Error('"version" field is missing in pandora.json.');
   }
 
+  // Verify that compiled books exist
   let books = config.books;
   if (Array.isArray(books)) {
     for (let i = 0; i < books.length; i++) {
       let book = books[i];
+      let dest = path.join(book.outdir, book.name);
+
+      if (!fs.existsSync(dest)) {
+        throw new Error('Cannot find compiled book at ' + dest + '.');
+      }
     }
   }
-
-  // let booksDestination = config.destination || './build';
-  // if (!fs.existsSync(booksDestination)) {
-  //   throw new Error('Cannot find compiled books. Please make sure that you\'ve run "pandora book"');
-  // }
 };
 
 const createTempFolder = () => {

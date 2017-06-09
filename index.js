@@ -80,16 +80,22 @@ const validateConfigAndDestination = (config) => {
     throw new Error('"version" field is missing in pandora.json.');
   }
 
-  // Verify that compiled books exist
   let books = config.books;
-  if (Array.isArray(books)) {
-    for (let i = 0; i < books.length; i++) {
-      let book = books[i];
-      let dest = path.join(book.outdir, book.name);
+  let bookNames = [];
 
-      if (!fs.existsSync(dest)) {
-        throw new Error('Cannot find compiled book at ' + dest + '.');
-      }
+  for (let i = 0; i < books.length; i++) {
+    let book = books[i];
+    let dest = path.join(book.outdir, book.name);
+
+    // Check that name is not duplicated
+    if (bookNames.indexOf(book.name) > -1) {
+      throw new Error('Book\'s name cannot be duplicated.');
+    }
+    bookNames.push(book.name);
+
+    // Check that compiled book exists
+    if (!fs.existsSync(dest)) {
+      throw new Error('Cannot find compiled book at ' + dest + '.');
     }
   }
 };

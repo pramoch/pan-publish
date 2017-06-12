@@ -100,19 +100,6 @@ const validateConfigAndDestination = (config) => {
   }
 };
 
-const createTempFolder = () => {
-  const fse = require('fs-extra');
-  const tempFolder = './.pandora-publish';
-
-  if (fse.existsSync(tempFolder)) {
-    fse.removeSync(tempFolder);
-  }
-
-  fse.mkdirSync(tempFolder);
-
-  return tempFolder;
-};
-
 const parseConfig = (config) => {
   let docsJson = {
     name: config.name,
@@ -132,23 +119,23 @@ const parseConfig = (config) => {
   return docsJson;
 };
 
-const createDocsJson = (config, tempFolder) => {
+const createDocsJson = (config, storage) => {
   const fs = require('fs');
   const path = require('path');
 
   let docsJson = parseConfig(config);
   let docsString = JSON.stringify(docsJson, null, 2);
-  let docsJsonPath = path.join(tempFolder, 'docs.json');
+  let docsJsonPath = path.join(storage, 'docs.json');
 
   fs.writeFileSync(docsJsonPath, docsString);
 };
 
-const copyBooks = (config, tempFolder) => {
+const copyBooks = (config, storage) => {
   const path = require('path');
   const fse = require('fs-extra');
 
   // create books folder
-  var booksFolder = path.join(tempFolder, 'books');
+  var booksFolder = path.join(storage, 'books');
   fse.mkdirSync(booksFolder);
 
   // copy books
@@ -161,7 +148,7 @@ const copyBooks = (config, tempFolder) => {
   }
 };
 
-const zipFiles = (config, tempFolder) => new Promise((resolve, reject) => {
+const zipFiles = (config, storage) => new Promise((resolve, reject) => {
   const JSZip = require('jszip');
   const zip = new JSZip();
   const glob = require('glob');
@@ -170,7 +157,7 @@ const zipFiles = (config, tempFolder) => new Promise((resolve, reject) => {
 
   const globOptions = {
     nodir: true,
-    cwd: tempFolder
+    cwd: storage
   }
 
   glob('**/*', globOptions, (err, files) => {
@@ -180,7 +167,7 @@ const zipFiles = (config, tempFolder) => new Promise((resolve, reject) => {
 
     let promise = Promise.all(files.map((filename, index) => {
       return new Promise((resolve, reject) => {
-        fs.readFile(path.join(tempFolder, filename), (err, data) => {
+        fs.readFile(path.join(storage, filename), (err, data) => {
           if (err) {
             return reject(err);
           }
@@ -190,7 +177,7 @@ const zipFiles = (config, tempFolder) => new Promise((resolve, reject) => {
         });
       });
     }))
-    
+
     .then(() => zip.generateAsync({ type: 'nodebuffer' }))      
 
     .then((content) => {
@@ -206,12 +193,11 @@ const handle = (context) => {
   let config = context.config;
 
   validateConfigAndDestination(config);
-  let tempFolder = createTempFolder();
+  let storage = context.storage;
 
-  createDocsJson(config, tempFolder)
-  copyBooks(config, tempFolder);
-  
-  return zipFiles(config, tempFolder);
+  createDocsJson(config, storage)
+  copyBooks(config, storage);  
+  return zipFiles(config, storage);
 };
 
 module.exports = { install, check, handle };

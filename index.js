@@ -161,16 +161,57 @@ const copyBooks = (config, tempFolder) => {
   }
 };
 
-const handle = (context) => new Promise((resolve, reject) => {
-  var config = context.config;
+const zipFiles = (config, tempFolder) => new Promise((resolve, reject) => {
+  const JSZip = require('jszip');
+  const zip = new JSZip();
+  const glob = require('glob');
+  const fs = require('fs');
+  const path = require('path');  
+
+  const globOptions = {
+    nodir: true,
+    cwd: tempFolder
+  }
+
+  glob('**/*', globOptions, (err, files) => {
+    if (err) {
+      return reject(err)
+    }
+
+    let promise = Promise.all(files.map((filename, index) => {
+      return new Promise((resolve, reject) => {
+        fs.readFile(path.join(tempFolder, filename), (err, data) => {
+          if (err) {
+            return reject(err);
+          }
+
+          zip.file(filename, data, { binary: true });          
+          resolve();  
+        });
+      });
+    }))
+    
+    .then(() => zip.generateAsync({ type: 'nodebuffer' }))      
+
+    .then((content) => {
+      let zipName = config.name + '_' + config.version + '.zip';
+      fs.writeFileSync(zipName, content);      
+    });
+
+    resolve(promise);
+  });
+});
+
+const handle = (context) => {
+  let config = context.config;
 
   validateConfigAndDestination(config);
   let tempFolder = createTempFolder();
 
   createDocsJson(config, tempFolder)
   copyBooks(config, tempFolder);
-
-  resolve();
-});
+  
+  return zipFiles(config, tempFolder);
+};
 
 module.exports = { install, check, handle };

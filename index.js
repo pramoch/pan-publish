@@ -153,7 +153,7 @@ const zipFiles = (config, storage) => new Promise((resolve, reject) => {
   const zip = new JSZip();
   const glob = require('glob');
   const fs = require('fs');
-  const path = require('path');  
+  const path = require('path');
 
   const globOptions = {
     nodir: true,
@@ -172,32 +172,46 @@ const zipFiles = (config, storage) => new Promise((resolve, reject) => {
             return reject(err);
           }
 
-          zip.file(filename, data, { binary: true });          
-          resolve();  
+          zip.file(filename, data, { binary: true });
+          resolve();
         });
       });
     }))
 
-    .then(() => zip.generateAsync({ type: 'nodebuffer' }))      
+    .then(() => zip.generateAsync({ type: 'nodebuffer' }))
 
     .then((content) => {
-      let zipName = config.name + '_' + config.version + '.zip';
-      fs.writeFileSync(zipName, content);      
+      let zipFile = config.name + '_' + config.version + '.zip';
+      fs.writeFileSync(zipFile, content);
+
+      return zipFile;
     });
 
     resolve(promise);
   });
 });
 
+const upload = (zipFile) => new Promise((resolve, reject) => {
+  const request = require('request');
+  const url = 'http://localhost:3030/about';
+
+  request(url, (error, response, body) => {
+    resolve();
+  });
+});
+
 const handle = (context) => {
   let config = context.config;
-
-  validateConfigAndDestination(config);
   let storage = context.storage;
 
+  validateConfigAndDestination(config);
   createDocsJson(config, storage)
-  copyBooks(config, storage);  
-  return zipFiles(config, storage);
+  copyBooks(config, storage);
+
+  return zipFiles(config, storage)
+  .then((zipFile) => {
+    return upload(zipFile);
+  });
 };
 
 module.exports = { install, check, handle };

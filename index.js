@@ -181,10 +181,11 @@ const zipFiles = (config, storage) => new Promise((resolve, reject) => {
     .then(() => zip.generateAsync({ type: 'nodebuffer' }))
 
     .then((content) => {
-      let zipFile = config.name + '_' + config.version + '.zip';
-      fs.writeFileSync(zipFile, content);
+      let zipName = config.name + '_' + config.version + '.zip';
+      let zipPath = path.join(storage, zipName);
+      fs.writeFileSync(zipPath, content);
 
-      return zipFile;
+      return zipPath;
     });
 
     resolve(promise);

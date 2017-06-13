@@ -197,8 +197,9 @@ const upload = (zipFile) => new Promise((resolve, reject) => {
   const request = require('request');
   const options = {
     url: 'http://localhost:3030/api/v1/upload',
+    // url: 'http://doccloud.int.thomsonreuters.com/api/v1/upload',
     formData: {
-      'doc-package': fs.createReadStream('football_0.0.1.zip')
+      'doc-package': fs.createReadStream(zipFile)
     },
     timeout: 20000
   }

@@ -192,17 +192,44 @@ const zipFiles = (config, storage) => new Promise((resolve, reject) => {
 });
 
 const upload = (zipFile) => new Promise((resolve, reject) => {
+  const fs = require('fs');
   const request = require('request');
-  const url = 'http://localhost:3030/about';
+  const options = {
+    url: 'http://localhost:3030/api/v1/upload',
+    formData: {
+      'doc-package': fs.createReadStream('football_0.0.1.zip')
+    },
+    timeout: 20000
+  }
 
-  request(url, (error, response, body) => {
+  request.post(options, (error, response, body) => {
+    // Handle request's error e.g. timeout
+    if (error) {
+      return reject(new Error('Upload failed - ' + error.message));
+    }
+
+    // Parsing response from pandora-cloud
+    let bodyJson;
+    try {
+      bodyJson = JSON.parse(body);
+    }
+    catch (e) {
+      return reject(new Error('Upload failed - Response from pandora-cloud is not in the correct JSON format'));
+    }
+
+    // Handle error returned from pandora-cloud
+    if (!bodyJson.success) {
+      return reject(new Error('Upload failed - ' + bodyJson.error));
+    }
+
+    // Upload successfully
     resolve();
   });
 });
 
 const handle = (context) => {
-  let config = context.config;
-  let storage = context.storage;
+  const config = context.config;
+  const storage = context.storage;
 
   validateConfigAndDestination(config);
   createDocsJson(config, storage)

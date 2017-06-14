@@ -196,12 +196,12 @@ const upload = (zipFile) => new Promise((resolve, reject) => {
   const fs = require('fs');
   const request = require('request');
   const options = {
-    url: 'http://localhost:3030/api/v1/upload',
-    // url: 'http://doccloud.int.thomsonreuters.com/api/v1/upload',
+    // url: 'http://localhost:3030/api/v1/upload',
+    url: 'http://doccloud.int.thomsonreuters.com/api/v1/upload',
     formData: {
       'doc-package': fs.createReadStream(zipFile)
     },
-    timeout: 20000
+    timeout: 120000
   }
 
   request.post(options, (error, response, body) => {

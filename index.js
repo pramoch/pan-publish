@@ -159,11 +159,11 @@ const zipFiles = (config, storage) => new Promise((resolve, reject) => {
   const globOptions = {
     nodir: true,
     cwd: storage
-  }
+  };
 
   glob('**/*', globOptions, (err, files) => {
     if (err) {
-      return reject(err)
+      return reject(err);
     }
 
     let promise = Promise.all(files.map((filename, index) => {
@@ -203,7 +203,7 @@ const upload = (zipFile) => new Promise((resolve, reject) => {
       'doc-package': fs.createReadStream(zipFile)
     },
     timeout: 120000
-  }
+  };
 
   request.post(options, (error, response, body) => {
     // Handle request's error e.g. timeout
@@ -235,7 +235,7 @@ const handle = (context) => {
   const storage = context.storage;
 
   validateConfigAndDestination(config);
-  createDocsJson(config, storage)
+  createDocsJson(config, storage);
   copyBooks(config, storage);
 
   return zipFiles(config, storage)

@@ -88,6 +88,7 @@ const validateConfigAndDestination = (config) => {
     let dest = path.join(book.outdir, book.name);
 
     // Check that name is not duplicated
+    // Book's name is changed to lower case in pandora core
     if (bookNames.indexOf(book.name) > -1) {
       throw new Error('Book\'s name cannot be duplicated.');
     }

@@ -171,7 +171,7 @@ const createZipFile = (config, storage) => new Promise((resolve, reject) => {
   const zip = new JSZip();
 
   // Add docs.json
-  let data = fs.readFileSync(path.join(storage, 'docs1.json'));
+  let data = fs.readFileSync(path.join(storage, 'docs.json'));
   zip.file('docs.json', data, { binary: true });
 
   // Add books

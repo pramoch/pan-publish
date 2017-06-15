@@ -131,34 +131,15 @@ const createDocsJson = (config, storage) => {
   fs.writeFileSync(docsJsonPath, docsString);
 };
 
-const copyBooks = (config, storage) => {
+const zipBook = (book, zip) => new Promise((resolve, reject) => {
   const path = require('path');
-  const fse = require('fs-extra');
-
-  // create books folder
-  var booksFolder = path.join(storage, 'books');
-  fse.mkdirSync(booksFolder);
-
-  // copy books
-  var books = config.books;
-  for(let i = 0; i < books.length; i++) {
-    let book = books[i];
-    let dest = path.join(book.outdir, book.name);
-
-    fse.copySync(dest, path.join(booksFolder, book.name));
-  }
-};
-
-const zipFiles = (config, storage) => new Promise((resolve, reject) => {
-  const JSZip = require('jszip');
-  const zip = new JSZip();
   const glob = require('glob');
   const fs = require('fs');
-  const path = require('path');
 
+  let dest = path.join(book.outdir, book.name);
   const globOptions = {
     nodir: true,
-    cwd: storage
+    cwd: dest
   };
 
   glob('**/*', globOptions, (err, files) => {
@@ -168,29 +149,50 @@ const zipFiles = (config, storage) => new Promise((resolve, reject) => {
 
     let promise = Promise.all(files.map((filename, index) => {
       return new Promise((resolve, reject) => {
-        fs.readFile(path.join(storage, filename), (err, data) => {
+        fs.readFile(path.join(dest, filename), (err, data) => {
           if (err) {
             return reject(err);
           }
 
-          zip.file(filename, data, { binary: true });
+          zip.file(path.join('books', book.name, filename), data, { binary: true });
           resolve();
         });
       });
-    }))
-
-    .then(() => zip.generateAsync({ type: 'nodebuffer' }))
-
-    .then((content) => {
-      let zipName = config.name + '_' + config.version + '.zip';
-      let zipPath = path.join(storage, zipName);
-      fs.writeFileSync(zipPath, content);
-
-      return zipPath;
-    });
+    }));
 
     resolve(promise);
   });
+});
+
+const createZipFile = (config, storage) => new Promise((resolve, reject) => {
+  const fs = require('fs');
+  const path = require('path');
+  const JSZip = require('jszip');
+  const zip = new JSZip();
+
+  // Add docs.json
+  let data = fs.readFileSync(path.join(storage, 'docs1.json'));
+  zip.file('docs.json', data, { binary: true });
+
+  // Add books
+  let books = config.books;
+  let promise = Promise.all(books.map((book) => {
+    return zipBook(book, zip);
+  }))
+
+  .then(() => {
+    return zip.generateAsync({ type: 'nodebuffer' });
+  })
+
+  .then((content) => {
+    let zipName = config.name + '_' + config.version + '.zip';
+    let zipPath = path.join(storage, zipName);
+    fs.writeFileSync(zipPath, content);
+
+    return zipPath;
+  });
+
+  resolve(promise);
 });
 
 const upload = (zipFile, rcConfig) => new Promise((resolve, reject) => {
@@ -239,9 +241,8 @@ const handle = (context) => {
 
   validateConfigAndDestination(config);
   createDocsJson(config, storage);
-  copyBooks(config, storage);
 
-  return zipFiles(config, storage)
+  return createZipFile(config, storage)
   .then((zipFile) => {
     return upload(zipFile, rcConfig);
   });

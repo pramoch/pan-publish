@@ -154,7 +154,9 @@ const zipBook = (book, zip) => new Promise((resolve, reject) => {
             return reject(err);
           }
 
-          zip.file(path.join('books', book.name, filename), data, { binary: true });
+          // path.join() use '\' while JSZIP use '/'
+          let fileDest = 'books/' + book.name + '/' + filename;
+          zip.file(fileDest, data, { binary: true });
           resolve();
         });
       });

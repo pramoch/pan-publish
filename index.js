@@ -120,9 +120,11 @@ const parseConfig = (config) => {
   return docsJson;
 };
 
-const createDocsJson = (config, storage) => {
+const createDocsJson = (context) => {
   const fs = require('fs');
   const path = require('path');
+  const config = context.config;
+  const storage = context.storage;
 
   let docsJson = parseConfig(config);
   let docsString = JSON.stringify(docsJson, null, 2);
@@ -131,7 +133,7 @@ const createDocsJson = (config, storage) => {
   fs.writeFileSync(docsJsonPath, docsString);
 };
 
-const zipBook = (book, zip) => new Promise((resolve, reject) => {
+const zipBook = (book, zip, progress) => new Promise((resolve, reject) => {
   const path = require('path');
   const glob = require('glob');
   const fs = require('fs');
@@ -147,7 +149,7 @@ const zipBook = (book, zip) => new Promise((resolve, reject) => {
       return reject(err);
     }
 
-    let promise = Promise.all(files.map((filename, index) => {
+    Promise.all(files.map((filename, index) => {
       return new Promise((resolve, reject) => {
         fs.readFile(path.join(dest, filename), (err, data) => {
           if (err) {
@@ -160,17 +162,23 @@ const zipBook = (book, zip) => new Promise((resolve, reject) => {
           resolve();
         });
       });
-    }));
+    }))
 
-    resolve(promise);
+    .then(() => {
+      progress.tick();
+      resolve();
+    });
   });
 });
 
-const createZipFile = (config, storage) => new Promise((resolve, reject) => {
+const createZipFile = (context) => new Promise((resolve, reject) => {
   const fs = require('fs');
   const path = require('path');
   const JSZip = require('jszip');
   const zip = new JSZip();
+  const config = context.config;
+  const progress = context.progress;
+  const storage = context.storage;
 
   // Add docs.json
   let data = fs.readFileSync(path.join(storage, 'docs.json'));
@@ -178,8 +186,10 @@ const createZipFile = (config, storage) => new Promise((resolve, reject) => {
 
   // Add books
   let books = config.books;
+  progress.expandTo(books.length + 1);
+
   let promise = Promise.all(books.map((book) => {
-    return zipBook(book, zip);
+    return zipBook(book, zip, progress);
   }))
 
   .then(() => {
@@ -197,7 +207,8 @@ const createZipFile = (config, storage) => new Promise((resolve, reject) => {
   resolve(promise);
 });
 
-const upload = (zipFile, rcConfig) => new Promise((resolve, reject) => {
+const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => {
+  const progress = context.progress;
   const fs = require('fs');
   const request = require('request');
   const options = {
@@ -229,6 +240,7 @@ const upload = (zipFile, rcConfig) => new Promise((resolve, reject) => {
     }
 
     // Upload successfully
+    progress.tick();
     resolve();
   });
 });
@@ -238,15 +250,13 @@ const handle = (context) => {
     endpoint: 'http://doccloud.int.thomsonreuters.com/api/v1/upload'
   };
   const rcConfig = require('rc')('pandora', defaultRcConfig);
-  const config = context.config;
-  const storage = context.storage;
 
-  validateConfigAndDestination(config);
-  createDocsJson(config, storage);
+  validateConfigAndDestination(context.config);
+  createDocsJson(context);
 
-  return createZipFile(config, storage)
+  return createZipFile(context)
   .then((zipFile) => {
-    return upload(zipFile, rcConfig);
+    return upload(zipFile, rcConfig, context);
   });
 };
 

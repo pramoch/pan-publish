@@ -1,0 +1,14 @@
+before_script:
+  - git remote set-url origin git@git.sami.int.thomsonreuters.com:pandora/pandora-publish-doccloud.git
+  
+release:
+  stage: deploy
+  tags:
+    - node
+    - linux
+  script:
+    - tagver patch
+    - npm version from-git
+    - bamsu --url=emea/default.npm.local/pandora-publish-doccloud/
+  only:
+    - master

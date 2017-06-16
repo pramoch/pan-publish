@@ -9,6 +9,6 @@ release:
   script:
     - tagver patch
     - npm version from-git
-    - bamsu --url=emea/default.npm.local/pandora-publish-doccloud/
+    - bamsu --url=emea/default.npm.local/pandora-book-plugin/
   only:
     - master

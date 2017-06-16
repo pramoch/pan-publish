@@ -179,15 +179,16 @@ const createZipFile = (context) => new Promise((resolve, reject) => {
   const config = context.config;
   const progress = context.progress;
   const storage = context.storage;
+  let books = config.books;
 
   // Add docs.json
   let data = fs.readFileSync(path.join(storage, 'docs.json'));
   zip.file('docs.json', data, { binary: true });
 
-  // Add books
-  let books = config.books;
-  progress.expandTo(books.length + 1);
+  // Create zip file will use 50% of progress bar
+  progress.expandTo(books.length * 2);
 
+  // Add books
   let promise = Promise.all(books.map((book) => {
     return zipBook(book, zip, progress);
   }))
@@ -219,7 +220,22 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
     timeout: 120000
   };
 
-  request.post(options, (error, response, body) => {
+  // Handle progress bar
+  const fileSize = fs.statSync(zipFile).size;
+  const booksLength = context.config.books.length;
+
+  // We need 10 steps or more for upload.
+  // So, do not expand if the existing steps (i.e. booksLength) is >= 10
+  let numberOfStep = booksLength;
+  if (booksLength < 10) {
+    numberOfStep = 10;
+    progress.expandBy(10 - booksLength);
+  }
+
+  const stepSize = fileSize / numberOfStep;
+  let nextUpdateSize = stepSize;
+
+  let req = request.post(options, (error, response, body) => {
     // Handle request's error e.g. timeout
     if (error) {
       return reject(new Error('Upload failed - ' + error.message));
@@ -240,8 +256,17 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
     }
 
     // Upload successfully
-    progress.tick();
+    progress.fill();
     resolve();
+  })
+  .on('drain', () => {
+    let uploadedSize = req.req.connection.bytesWritten;
+
+    // The last tick will be done when we get a response from server
+    if (uploadedSize > nextUpdateSize && uploadedSize < fileSize) {
+      nextUpdateSize += stepSize;
+      progress.tick();
+    }
   });
 });
 

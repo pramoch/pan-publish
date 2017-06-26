@@ -39,22 +39,13 @@ const validateConfigAndDestination = (config) => {
 };
 
 const parseConfig = (config) => {
-  let docsJson = {
-    name: config.name,
-    version: config.version,
-    books: []
-  };
-
   let books = config.books;
   for (let i = 0; i < books.length; i++) {
     let book = books[i];
-    docsJson.books.push({
-      name: book.name,
-      type: book.type
-    });
+    book.title = book.title || book.name;
   }
 
-  return docsJson;
+  return config;
 };
 
 const createDocsJson = (context) => {

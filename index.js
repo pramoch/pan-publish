@@ -39,22 +39,15 @@ const validateConfigAndDestination = (config) => {
 };
 
 const parseConfig = (config) => {
-  let docsJson = {
-    name: config.name,
-    version: config.version,
-    books: []
-  };
-
+  // Actually, we just save all configuration from pandora core into docs.json.
+  // However, if book's title is not available we will use book's name as book's title.
   let books = config.books;
   for (let i = 0; i < books.length; i++) {
     let book = books[i];
-    docsJson.books.push({
-      name: book.name,
-      type: book.type
-    });
+    book.title = book.title || book.name;
   }
 
-  return docsJson;
+  return config;
 };
 
 const createDocsJson = (context) => {

@@ -142,8 +142,9 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
   const progress = context.progress;
   const fs = require('fs');
   const request = require('request');
+  const url = rcConfig.endpoint + '/api/v1/upload';
   const options = {
-    url: rcConfig.endpoint,
+    url: url,
     formData: {
       'doc-package': fs.createReadStream(zipFile)
     },
@@ -202,7 +203,7 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
 
 const handle = (context) => {
   const defaultRcConfig = {
-    endpoint: 'http://doccloud.int.thomsonreuters.com/api/v1/upload'
+    endpoint: 'http://doccloud.int.thomsonreuters.com'
   };
   const rcConfig = require('rc')('pandora', defaultRcConfig);
 

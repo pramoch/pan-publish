@@ -7,7 +7,7 @@ test:
   stage: test
   tags:
     - node
-    - linux
+    - windows
   script:
     - grunt lint
     - grunt test

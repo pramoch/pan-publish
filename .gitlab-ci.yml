@@ -9,8 +9,8 @@ test:
     - node
     - linux
   script:
-    - call grunt lint
-    - call grunt test
+    - grunt lint
+    - grunt test
   except:
     - tags
     - release

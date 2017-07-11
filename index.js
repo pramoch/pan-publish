@@ -6,7 +6,7 @@ const check = (context) => {
   return context.task === 'publish';
 };
 
-const validateConfigAndDestination = (config) => {
+const validateConfigAndDestination = (config) => new Promise((resolve, reject) => {
   const path = require('path');
 
   // name and version are mandatory fields
@@ -37,7 +37,9 @@ const validateConfigAndDestination = (config) => {
       throw new Error('Cannot find compiled book at ' + dest + '.');
     }
   }
-};
+
+  resolve();
+});
 
 const parseConfig = (config) => {
   // Actually, we just save all configuration from pandora core into docs.json.
@@ -51,8 +53,7 @@ const parseConfig = (config) => {
   return config;
 };
 
-const createDocsJson = (context) => {
-  const fs = require('fs');
+const createDocsJson = (context) => new Promise((resolve, reject) => {
   const path = require('path');
   const config = context.config;
   const storage = context.storage;
@@ -62,12 +63,13 @@ const createDocsJson = (context) => {
   let docsJsonPath = path.join(storage, 'docs.json');
 
   fs.writeFileSync(docsJsonPath, docsString);
-};
+
+  resolve();
+});
 
 const zipBook = (book, zip, progress) => new Promise((resolve, reject) => {
   const path = require('path');
   const glob = require('glob');
-  const fs = require('fs');
 
   let dest = path.join(book.outdir, book.name);
   const globOptions = {
@@ -103,7 +105,6 @@ const zipBook = (book, zip, progress) => new Promise((resolve, reject) => {
 });
 
 const createZipFile = (context) => new Promise((resolve, reject) => {
-  const fs = require('fs');
   const path = require('path');
   const JSZip = require('jszip');
   const zip = new JSZip();
@@ -141,7 +142,6 @@ const createZipFile = (context) => new Promise((resolve, reject) => {
 
 const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => {
   const progress = context.progress;
-  const fs = require('fs');
   const request = require('request');
   const url = rcConfig.endpoint + '/api/v1/upload';
   const options = {
@@ -208,10 +208,13 @@ const handle = (context) => new Promise((resolve, reject) => {
   };
   const rcConfig = require('rc')('pandora', defaultRcConfig);
 
-  validateConfigAndDestination(context.config);
-  createDocsJson(context);
-
-  let promise = createZipFile(context)
+  let promise = validateConfigAndDestination(context.config)
+  .then(() => {
+    return createDocsJson(context);
+  })
+  .then(() => {
+    return createZipFile(context);
+  })
   .then((zipFile) => {
     return upload(zipFile, rcConfig, context);
   });
@@ -219,4 +222,4 @@ const handle = (context) => new Promise((resolve, reject) => {
   resolve(promise);
 });
 
-module.exports = { install, check, handle };
+module.exports = { install, check, handle, validateConfigAndDestination, parseConfig };

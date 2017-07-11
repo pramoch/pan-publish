@@ -3,44 +3,39 @@ let sinon = require('sinon');
 let rewire = require("rewire");
 let publish = rewire('../index.js')
 
+// Mock fs
 let fsMock = {
   existsSync: (path) => true
 };
 
-describe('Validation', function () {
-  let context = null;
+describe('Publish', function () {
+  let config = null;
 
   beforeEach(function () {
     publish.__set__('fs', fsMock);
 
-    context = {
-      config: {
-        name: 'pandora-cloud',
-        version: '1.0.0',
-        books: [
-          {
-            name: 'book-1',
-            outdir: './build'
-          },
-          {
-            name: 'book-2',
-            outdir: './build'
-          }
-        ]
-      },
-      storage: ''
+    config = {
+      name: 'pandora-cloud',
+      version: '1.0.0',
+      books: [
+        {
+          name: 'book-1',
+          outdir: './build'
+        },
+        {
+          name: 'book-2',
+          outdir: './build'
+        }
+      ]
     };
   });
 
-  afterEach(function () {
-  });
-
   it('throws error if project\'s name is missing', function (done) {
-    context.config.name = '';
+    config.name = '';
 
-    publish.handle(context)
+    publish.validateConfigAndDestination(config)
       .then(() => {
-        done('Expect reject but receive resolve');
+        done(new Error('Expect reject but receive resolve'));
       })
       .catch(() => {
         done();
@@ -48,11 +43,11 @@ describe('Validation', function () {
   });
 
   it('throws error if project\'s version is missing', function (done) {
-    context.config.version = '';
+    config.version = '';
 
-    publish.handle(context)
+    publish.validateConfigAndDestination(config)
       .then(() => {
-        done('Expect reject but receive resolve');
+        done(new Error('Expect reject but receive resolve'));
       })
       .catch(() => {
         done();
@@ -60,12 +55,12 @@ describe('Validation', function () {
   });
 
   it('throws error if book\'s name is duplicated', function (done) {
-    context.config.books[0].name = 'book-1';
-    context.config.books[1].name = 'BOOK-1';
+    config.books[0].name = 'book-1';
+    config.books[1].name = 'BOOK-1';
 
-    publish.handle(context)
+    publish.validateConfigAndDestination(config)
       .then(() => {
-        done('Expect reject but receive resolve');
+        done(new Error('Expect reject but receive resolve'));
       })
       .catch(() => {
         done();
@@ -78,13 +73,21 @@ describe('Validation', function () {
     }
     publish.__set__('fs', mock);
 
-    publish.handle(context)
+    publish.validateConfigAndDestination(context.config)
       .then(() => {
-        done('Expect reject but receive resolve');
+        done(new Error('Expect reject but receive resolve'));
       })
       .catch(() => {
         done();
       });
+  });
+
+  it('use name as title when title does not exists', function () {
+    books = config.books;
+
+    publish.parseConfig(config);
+    assert.strictEqual(books[0].title, books[0].name);
+    assert.strictEqual(books[1].title, books[1].name)
   });
 });
 

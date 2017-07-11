@@ -1,3 +1,5 @@
+let fs = require('fs');
+
 const install = PluginTypes => PluginTypes.PUBLISHER;
 
 const check = (context) => {
@@ -5,7 +7,6 @@ const check = (context) => {
 };
 
 const validateConfigAndDestination = (config) => {
-  const fs = require('fs');
   const path = require('path');
 
   // name and version are mandatory fields
@@ -22,14 +23,14 @@ const validateConfigAndDestination = (config) => {
 
   for (let i = 0; i < books.length; i++) {
     let book = books[i];
+    let bookName = book.name.toLowerCase();
     let dest = path.join(book.outdir, book.name);
 
     // Check that name is not duplicated
-    // Book's name is changed to lower case in pandora core
-    if (bookNames.indexOf(book.name) > -1) {
+    if (bookNames.indexOf(bookName) > -1) {
       throw new Error('Book\'s name cannot be duplicated.');
     }
-    bookNames.push(book.name);
+    bookNames.push(bookName);
 
     // Check that compiled book exists
     if (!fs.existsSync(dest)) {
@@ -201,7 +202,7 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
   });
 });
 
-const handle = (context) => {
+const handle = (context) => new Promise((resolve, reject) => {
   const defaultRcConfig = {
     endpoint: 'http://doccloud.int.thomsonreuters.com'
   };
@@ -210,10 +211,12 @@ const handle = (context) => {
   validateConfigAndDestination(context.config);
   createDocsJson(context);
 
-  return createZipFile(context)
+  let promise = createZipFile(context)
   .then((zipFile) => {
     return upload(zipFile, rcConfig, context);
   });
-};
+
+  resolve(promise);
+});
 
 module.exports = { install, check, handle };

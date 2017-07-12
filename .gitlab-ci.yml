@@ -9,8 +9,8 @@ test:
     - node
     - windows
   script:
-    - grunt lint
-    - grunt test
+    - call grunt lint
+    - call grunt test
   except:
     - tags
     - release

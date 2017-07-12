@@ -86,7 +86,7 @@ describe('Publish', function () {
 
     publish.parseConfig(config);
     assert.strictEqual(books[0].title, books[0].name);
-    assert.strictEqual(books[1].title, books[1].name);
+    assert.strictEqual(books[1].title, books[1].name + ' ');
   });
 });
 

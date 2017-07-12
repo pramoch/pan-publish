@@ -1,6 +1,24 @@
 before_script:
   - git remote set-url origin git@git.sami.int.thomsonreuters.com:pandora/pandora-publish-doccloud.git
-  
+  - git pull origin master
+  - npm install
+
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  tags:
+    - node
+    - linux
+  script:
+    - grunt lint
+    - grunt test
+  except:
+    - tags
+    - release
+
 release:
   stage: deploy
   tags:

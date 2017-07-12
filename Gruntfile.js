@@ -3,10 +3,20 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     eslint: {
-      target: ['*.js']
+      target: ['*.js', 'test/**/*.js']
+    },
+    mocha_istanbul: {
+      coverage: {
+        src: 'test/**/*.js',
+        options: {
+          print: 'detail'
+        }
+      }
     }
   });
 
   grunt.registerTask('lint', ['eslint']);
-  grunt.registerTask('default', ['lint']);
+  grunt.registerTask('test', ['mocha_istanbul:coverage']);
+
+  grunt.registerTask('default', ['lint', 'test']);
 };

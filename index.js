@@ -1,11 +1,12 @@
+let fs = require('fs');
+
 const install = PluginTypes => PluginTypes.PUBLISHER;
 
 const check = (context) => {
   return context.task === 'publish';
 };
 
-const validateConfigAndDestination = (config) => {
-  const fs = require('fs');
+const validateConfigAndDestination = (config) => new Promise((resolve, reject) => {
   const path = require('path');
 
   // name and version are mandatory fields
@@ -22,21 +23,23 @@ const validateConfigAndDestination = (config) => {
 
   for (let i = 0; i < books.length; i++) {
     let book = books[i];
+    let bookName = book.name.toLowerCase();
     let dest = path.join(book.outdir, book.name);
 
     // Check that name is not duplicated
-    // Book's name is changed to lower case in pandora core
-    if (bookNames.indexOf(book.name) > -1) {
+    if (bookNames.indexOf(bookName) > -1) {
       throw new Error('Book\'s name cannot be duplicated.');
     }
-    bookNames.push(book.name);
+    bookNames.push(bookName);
 
     // Check that compiled book exists
     if (!fs.existsSync(dest)) {
       throw new Error('Cannot find compiled book at ' + dest + '.');
     }
   }
-};
+
+  resolve();
+});
 
 const parseConfig = (config) => {
   // Actually, we just save all configuration from pandora core into docs.json.
@@ -50,8 +53,7 @@ const parseConfig = (config) => {
   return config;
 };
 
-const createDocsJson = (context) => {
-  const fs = require('fs');
+const createDocsJson = (context) => new Promise((resolve, reject) => {
   const path = require('path');
   const config = context.config;
   const storage = context.storage;
@@ -61,12 +63,13 @@ const createDocsJson = (context) => {
   let docsJsonPath = path.join(storage, 'docs.json');
 
   fs.writeFileSync(docsJsonPath, docsString);
-};
+
+  resolve();
+});
 
 const zipBook = (book, zip, progress) => new Promise((resolve, reject) => {
   const path = require('path');
   const glob = require('glob');
-  const fs = require('fs');
 
   let dest = path.join(book.outdir, book.name);
   const globOptions = {
@@ -102,7 +105,6 @@ const zipBook = (book, zip, progress) => new Promise((resolve, reject) => {
 });
 
 const createZipFile = (context) => new Promise((resolve, reject) => {
-  const fs = require('fs');
   const path = require('path');
   const JSZip = require('jszip');
   const zip = new JSZip();
@@ -140,7 +142,6 @@ const createZipFile = (context) => new Promise((resolve, reject) => {
 
 const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => {
   const progress = context.progress;
-  const fs = require('fs');
   const request = require('request');
   const url = rcConfig.endpoint + '/api/v1/upload';
   const options = {
@@ -201,19 +202,24 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
   });
 });
 
-const handle = (context) => {
+const handle = (context) => new Promise((resolve, reject) => {
   const defaultRcConfig = {
     endpoint: 'http://doccloud.int.thomsonreuters.com'
   };
   const rcConfig = require('rc')('pandora', defaultRcConfig);
 
-  validateConfigAndDestination(context.config);
-  createDocsJson(context);
-
-  return createZipFile(context)
+  let promise = validateConfigAndDestination(context.config)
+  .then(() => {
+    return createDocsJson(context);
+  })
+  .then(() => {
+    return createZipFile(context);
+  })
   .then((zipFile) => {
     return upload(zipFile, rcConfig, context);
   });
-};
 
-module.exports = { install, check, handle };
+  resolve(promise);
+});
+
+module.exports = { install, check, handle, validateConfigAndDestination, parseConfig };

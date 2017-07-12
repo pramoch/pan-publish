@@ -3,7 +3,7 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     eslint: {
-      target: ['*.js']
+      target: ['*.js', 'test/**/*.js']
     },
     mocha_istanbul: {
       coverage: {

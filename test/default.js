@@ -1,7 +1,6 @@
 let assert = require('assert');
-let sinon = require('sinon');
-let rewire = require("rewire");
-let publish = rewire('../index.js')
+let rewire = require('rewire');
+let publish = rewire('../index.js');
 
 // Mock fs
 let fsMock = {
@@ -70,7 +69,7 @@ describe('Publish', function () {
   it('throws error if compiled book does not exist', function (done) {
     let mock = {
       existsSync: (path) => false
-    }
+    };
     publish.__set__('fs', mock);
 
     publish.validateConfigAndDestination(context.config)

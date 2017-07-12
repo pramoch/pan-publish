@@ -11,10 +11,10 @@ test:
   stage: test
   tags:
     - node
-    - windows
+    - linux
   script:
-    - call grunt lint
-    - call grunt test
+    - grunt lint
+    - grunt test
   except:
     - tags
     - release

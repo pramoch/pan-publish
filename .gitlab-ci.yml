@@ -3,6 +3,10 @@ before_script:
   - git pull origin master
   - npm install
 
+stages:
+  - test
+  - deploy
+
 test:
   stage: test
   tags:

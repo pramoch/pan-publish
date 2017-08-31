@@ -204,7 +204,7 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
 
 const handle = (context) => new Promise((resolve, reject) => {
   const defaultRcConfig = {
-    endpoint: 'http://api.doccloud.int.thomsonreuters.com/'
+    endpoint: 'http://api.doccloud.int.thomsonreuters.com'
   };
   const rcConfig = require('rc')('pandora', defaultRcConfig);
 

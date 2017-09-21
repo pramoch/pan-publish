@@ -179,8 +179,8 @@ const upload = (zipFile, rcConfig, context) => new Promise((resolve, reject) => 
       bodyJson = JSON.parse(body);
     }
     catch (e) {
-      const message = 'Upload failed - Response from pandora-cloud is not in the expected JSON format.\n' +
-                      'Body: ' + body;
+      const message = 'Upload failed - Response from pandora-cloud is not in the expected JSON format.\n'
+                      + 'Body: ' + body;
       return reject(new Error(message));
     }
 

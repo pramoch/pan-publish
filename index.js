@@ -128,7 +128,7 @@ const createZipFile = (context) => new Promise((resolve, reject) => {
   .then(() => {
     return zip.generateAsync({
       type: 'nodebuffer',
-      compression: "DEFLATE",
+      compression: 'DEFLATE',
       compressionOptions: {
           level: 9
       }
